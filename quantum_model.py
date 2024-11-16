@@ -8,6 +8,7 @@ import pennylane as qml
 
 # Device configuration
 device = DEVICE
+q_device = 'lightning.gpu' if device == 'cuda' else 'lightning.qubit'
 
 
 class HybridQuantumClassifier(nn.Module):
@@ -18,27 +19,37 @@ class HybridQuantumClassifier(nn.Module):
         self.n_classes = n_classes
 
         # Quantum circuit parameters
-        self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits))
+        # Each layer has 3 rotation angles per qubit (RX, RY, RZ) and additional parameters for entangling layers
+        self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits, 4))  # 3 for rotations, 1 for entangling
 
         # Final classical layer
         self.fc = nn.Linear(n_qubits, n_classes)
 
     def quantum_layer(self, x):
-        dev = qml.device('default.qubit', wires=self.n_qubits)
+        # Use the GPU-accelerated Lightning backend
+        dev = qml.device(q_device, wires=self.n_qubits)
 
         @qml.qnode(dev, interface='torch')
         def circuit(inputs, weights):
             for idx in range(self.n_qubits):
                 qml.RY(inputs[idx], wires=idx)
 
-            qml.templates.BasicEntanglerLayers(weights, wires=range(self.n_qubits))
+            for layer in range(self.n_layers):
+                for idx in range(self.n_qubits):
+                    qml.RX(weights[layer, idx, 0], wires=idx)
+                    qml.RY(weights[layer, idx, 1], wires=idx)
+                    qml.RZ(weights[layer, idx, 2], wires=idx)
+                # Entangling layer with remaining weights
+                qml.templates.BasicEntanglerLayers(weights[layer, :, 3:], wires=range(self.n_qubits))
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
-        outputs = circuit(x, self.q_params)
+        # Execute the quantum circuit and cast outputs to float32
+        outputs = circuit(x, self.q_params).to(torch.float32)
         return outputs
 
     def forward(self, x):
         # x has shape (batch_size, n_qubits)
+        # Compute quantum circuit outputs for each sample in the batch
         quantum_outputs = torch.stack([self.quantum_layer(sample) for sample in x]).float()
         logits = self.fc(quantum_outputs)
         return logits
@@ -96,16 +107,17 @@ def eval_model(model, data_loader, loss_fn, device):
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
-    use_embeddings = True  # Must be True for quantum model
-    num_epochs = 4
+    num_epochs = 5  # Increased epochs for better training
     n_classes = 2
-    n_qubits = 10
-    n_layers = 2
+    n_qubits = 4
+    n_layers = 3  # Increased number of layers for deeper circuit
 
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True,device="cpu")  # use CPU to save memory
-    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True, device="cpu")  # use CPU to save memory
+    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True,
+                                      device="cpu")  # use CPU to save memory
+    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True,
+                                     device="cpu")  # use CPU to save memory
 
     # Initialize model
     model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes)
@@ -126,5 +138,3 @@ if __name__ == "__main__":
 
     # Save model
     torch.save(model.state_dict(), 'quantum_model.bin')
-
-
