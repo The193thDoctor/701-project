@@ -10,13 +10,15 @@ device = DEVICE
 
 
 class SentimentClassifier(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, hidden_dim):
         super(SentimentClassifier, self).__init__()
         # Assuming embeddings are of size 128
-        self.fc = nn.Linear(128, n_classes)
+        self.fc1 = nn.Linear(128, hidden_dim)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_dim, n_classes)
 
     def forward(self, embeddings):
-        output = self.fc(embeddings)
+        output = self.fc2(self.relu(self.fc1(embeddings)))
         return output
 
 
@@ -68,6 +70,7 @@ if __name__ == "__main__":
     batch_size = 8
     num_epochs = 3
     n_classes = 2
+    hidden_dim = 64
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -75,7 +78,7 @@ if __name__ == "__main__":
     test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True)
 
     # Initialize model
-    model = SentimentClassifier(n_classes=n_classes)
+    model = SentimentClassifier(n_classes = n_classes, hidden_dim = hidden_dim)
     model = model.to(device)
 
     # Loss and optimizer
