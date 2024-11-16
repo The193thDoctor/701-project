@@ -20,7 +20,7 @@ class HybridQuantumClassifier(nn.Module):
 
         # Quantum circuit parameters
         # Each layer has 3 rotation angles per qubit (RX, RY, RZ) and additional parameters for entangling layers
-        self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits, 4))  # 3 for rotations, 1 for entangling
+        self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits, 3))
 
         # Final classical layer
         self.fc = nn.Linear(n_qubits, n_classes)
@@ -33,14 +33,8 @@ class HybridQuantumClassifier(nn.Module):
         def circuit(inputs, weights):
             for idx in range(self.n_qubits):
                 qml.RY(inputs[idx], wires=idx)
+            qml.templates.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
 
-            for layer in range(self.n_layers):
-                for idx in range(self.n_qubits):
-                    qml.RX(weights[layer, idx, 0], wires=idx)
-                    qml.RY(weights[layer, idx, 1], wires=idx)
-                    qml.RZ(weights[layer, idx, 2], wires=idx)
-                # Entangling layer with remaining weights
-                qml.templates.BasicEntanglerLayers(weights[layer, :, 3:], wires=range(self.n_qubits))
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
         # Execute the quantum circuit and cast outputs to float32
