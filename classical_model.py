@@ -71,8 +71,8 @@ if __name__ == "__main__":
 
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True)
-    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True)
+    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True, device="cpu") # use CPU to save memory
+    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True, device="cpu") # use CPU to save memory
 
     # Initialize model
     model = SentimentClassifier(n_classes=n_classes)
