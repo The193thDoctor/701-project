@@ -16,4 +16,7 @@ dependencies:
   - cudatoolkit=11.3  # Remove or adjust version if not using CUDA
   - pip:
     - transformers
-    - pennylane
+    - pennylane==0.29
+    - huggingface_hub==0.7.0
+    - typing-extensions==4.1.1
+    - datasets
