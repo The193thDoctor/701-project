@@ -10,17 +10,15 @@ device = DEVICE
 
 
 class SentimentClassifier(nn.Module):
-    def __init__(self, n_classes, input_dim, hidden_dim):
+    def __init__(self, n_classes, hidden_dim):
         super(SentimentClassifier, self).__init__()
         # Assuming embeddings are of size 128
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc1 = nn.Linear(128, hidden_dim)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(hidden_dim, n_classes)
 
     def forward(self, embeddings):
-        temp = self.fc1(embeddings)
-        temp1 = self.relu(temp)
-        output = self.fc2(temp1)
+        output = self.fc2(self.relu(self.fc1(embeddings)))
         return output
 
 
@@ -33,7 +31,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         embeddings = batch['embedding'].to(device).float()
         labels = batch['label'].to(device)
 
-        outputs = model(embeddings[:, :input_dim])
+        outputs = model(embeddings)
         loss = loss_fn(outputs, labels)
 
         _, preds = torch.max(outputs, dim=1)
@@ -57,7 +55,7 @@ def eval_model(model, data_loader, loss_fn, device):
             embeddings = batch['embedding'].to(device).float()
             labels = batch['label'].to(device)
 
-            outputs = model(embeddings[:, :input_dim])
+            outputs = model(embeddings)
             loss = loss_fn(outputs, labels)
 
             _, preds = torch.max(outputs, dim=1)
@@ -70,19 +68,17 @@ def eval_model(model, data_loader, loss_fn, device):
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
-    num_epochs = 20
+    num_epochs = 3
     n_classes = 2
     hidden_dim = 64
 
-    input_dim = 16
-
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True)
-    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True)
+    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True, device="cpu") # use CPU to save memory
+    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True, device="cpu") # use CPU to save memory
 
     # Initialize model
-    model = SentimentClassifier(n_classes = n_classes, input_dim = input_dim, hidden_dim = hidden_dim)
+    model = SentimentClassifier(n_classes = n_classes, hidden_dim = hidden_dim)
     model = model.to(device)
 
     # Loss and optimizer
