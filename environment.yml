@@ -1,0 +1,19 @@
+name: 701-project
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pip
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cudatoolkit=11.3  # Remove or adjust version if not using CUDA
+  - pip:
+    - transformers
+    - pennylane
