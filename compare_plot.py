@@ -2,27 +2,36 @@
 
 import matplotlib.pyplot as plt
 import torch
-import pandas as pd
+from data_loader import download_subset_data, create_data_loader, DEVICE
 from classical_model import SentimentClassifier
-from quantum_model import HybridModel
-from data_loader import create_data_loader
+from quantum_model import HybridQuantumClassifier
 from transformers import BertTokenizer
+import numpy as np
+
+device = DEVICE
 
 
-def evaluate_model(model, data_loader, device):
+def evaluate_model(model, data_loader, device, use_embeddings, model_type='classical'):
     model.eval()
     correct_predictions = 0
 
     with torch.no_grad():
-        for d in data_loader:
-            input_ids = d["input_ids"].to(device)
-            attention_mask = d["attention_mask"].to(device)
-            labels = d["labels"].to(device)
+        for batch in data_loader:
+            labels = batch['label'].to(device)
 
-            outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask
-            )
+            if use_embeddings:
+                embeddings = batch['embedding'].to(device).float()
+                if model_type == 'quantum':
+                    embeddings = embeddings[:, :model.n_qubits]
+                inputs = {'embedding': embeddings}
+            else:
+                texts = batch['text']
+                tokenizer = BertTokenizer.from_pretrained("google/bert_uncased_L-2_H-128_A-2")
+                encoding = tokenizer(texts, return_tensors='pt', max_length=512, truncation=True, padding=True)
+                inputs = {'input_ids': encoding['input_ids'].to(device),
+                          'attention_mask': encoding['attention_mask'].to(device)}
+
+            outputs = model(inputs) if model_type == 'classical' else model(inputs['embedding'])
             _, preds = torch.max(outputs, dim=1)
             correct_predictions += torch.sum(preds == labels)
 
@@ -30,31 +39,30 @@ def evaluate_model(model, data_loader, device):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('yelp_polarity.csv')
-    df['label'] = df['label'].map({1: 0, 2: 1})
+    # Parameters
+    batch_size = 8
+    use_embeddings = True  # Set to True to use embeddings
+    n_classes = 2
+    n_qubits = 4
+    n_layers = 2
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    max_len = 128
-    batch_size = 16
-
-    data_loader = create_data_loader(df, tokenizer, max_len, batch_size)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Load data
+    train_df, test_df = download_subset_data()
+    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=use_embeddings)
 
     # Load classical model
-    classical_model = SentimentClassifier(n_classes=2)
+    classical_model = SentimentClassifier(n_classes=n_classes, use_embeddings=use_embeddings)
     classical_model.load_state_dict(torch.load('classical_model.bin'))
     classical_model = classical_model.to(device)
 
     # Load quantum model
-    n_qubits = 4
-    n_layers = 2
-    quantum_model = HybridModel(n_qubits, n_layers)
+    quantum_model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes)
     quantum_model.load_state_dict(torch.load('quantum_model.bin'))
     quantum_model = quantum_model.to(device)
 
     # Evaluate models
-    classical_acc = evaluate_model(classical_model, data_loader, device)
-    quantum_acc = evaluate_model(quantum_model, data_loader, device)
+    classical_acc = evaluate_model(classical_model, test_loader, device, use_embeddings, model_type='classical')
+    quantum_acc = evaluate_model(quantum_model, test_loader, device, use_embeddings, model_type='quantum')
 
     # Plotting
     models = ['Classical', 'Quantum']
