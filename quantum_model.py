@@ -8,7 +8,7 @@ import pennylane as qml
 
 # Device configuration
 device = DEVICE
-q_device = 'lightning.gpu' if device == 'cuda' else 'lightning.qubit'
+q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
 
 
 class HybridQuantumClassifier(nn.Module):
@@ -38,13 +38,13 @@ class HybridQuantumClassifier(nn.Module):
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
         # Execute the quantum circuit and cast outputs to float32
-        outputs = circuit(x, self.q_params).to(torch.float32)
+        outputs = circuit(x, self.q_params)
         return outputs
 
     def forward(self, x):
         # x has shape (batch_size, n_qubits)
         # Compute quantum circuit outputs for each sample in the batch
-        quantum_outputs = torch.stack([self.quantum_layer(sample) for sample in x]).float()
+        quantum_outputs = torch.stack([torch.tensor(self.quantum_layer(sample)) for sample in x]).float()
         logits = self.fc(quantum_outputs)
         return logits
 
@@ -101,9 +101,9 @@ def eval_model(model, data_loader, loss_fn, device):
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
-    num_epochs = 5  # Increased epochs for better training
+    num_epochs = 15  # Increased epochs for better training
     n_classes = 2
-    n_qubits = 4
+    n_qubits = 15
     n_layers = 3  # Increased number of layers for deeper circuit
 
     # Load data
