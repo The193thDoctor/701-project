@@ -75,11 +75,11 @@ def eval_model(model, data_loader, loss_fn, device):
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
-    num_epochs = 20
+    num_epochs = 15
     n_classes = 2
     hidden_dim = 64
 
-    input_dim = 16
+    input_dim = 15
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -94,14 +94,27 @@ if __name__ == "__main__":
     loss_fn = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=2e-5)
 
+    train_acc_all = []
+    train_loss_all = []
+    val_acc_all, val_loss_all = [], []
+
     # Training loop
     for epoch in range(num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}")
         train_acc, train_loss = train_epoch(model, train_loader, loss_fn, optimizer, device)
         print(f"Train loss: {train_loss:.4f}, accuracy: {train_acc:.4f}")
+        train_acc_all.append(train_acc.item())
+        train_loss_all.append(train_loss)
 
         val_acc, val_loss = eval_model(model, test_loader, loss_fn, device)
         print(f"Validation loss: {val_loss:.4f}, accuracy: {val_acc:.4f}")
+        val_acc_all.append(val_acc.item())
+        val_loss_all.append(val_loss)
+
+    print(f'Train acc: {train_acc_all}')
+    print(f'Train loss: {train_loss_all}')
+    print(f'Val acc: {val_acc_all}')
+    print(f'Val loss: {val_loss_all}')
 
     # Save model
     torch.save(model.state_dict(), 'classical_model.bin')

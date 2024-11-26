@@ -1,13 +1,13 @@
 # data_loader.py
 
-import pandas as pd
-import torch
-from torch.utils.data import Dataset, DataLoader
-from transformers import BertTokenizer, BertModel
+import pandas as pd 
+import torch 
+from torch.utils.data import Dataset, DataLoader 
+from sentence_transformers import SentenceTransformer # Device configuration 
 
-# Device configuration
-DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-MODEL_NAME = "google/bert_uncased_L-2_H-128_A-2"  # BERT model for embeddings
+DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
+print(f"Using device: {DEVICE}")
+MODEL_NAME = "jinaai/jina-embeddings-v2-base-en"
 
 def download_subset_data(train_size=2000, test_size=500, seed=10701):
     '''
@@ -35,23 +35,19 @@ def download_subset_data(train_size=2000, test_size=500, seed=10701):
     return train_df_subset, test_df_subset
 
 def get_embeddings(list_of_texts, device=DEVICE):
-    '''
-    Get BERT embeddings for a given list of texts.
-    Args:
-        list_of_texts (list): List of strings to process.
-        device (str): Device for computation ('cpu' or 'cuda').
-    Returns:
-        np.array: Embeddings as numpy arrays.
-    '''
-    tokenizer = BertTokenizer.from_pretrained(MODEL_NAME)
-    model = BertModel.from_pretrained(MODEL_NAME).to(device)
-
-    inputs = tokenizer(list_of_texts, return_tensors='pt', max_length=512, truncation=True, padding=True)
-    inputs = {key: val.to(device) for key, val in inputs.items()}
-
-    outputs = model(**inputs)
-    avg_hidden_states = torch.mean(outputs.last_hidden_state, dim=1)
-    return avg_hidden_states.cpu().detach().numpy()
+    ''' Get embeddings for a given list of texts using the new SentenceTransformer model. 
+    Args: 
+        list_of_texts (list): List of strings to process. 
+        device (str): Device for computation ('cpu' or 'cuda'). 
+    Returns: np.array: Embeddings as numpy arrays. 
+    ''' 
+    print("Loading model...")
+    model = SentenceTransformer(MODEL_NAME, trust_remote_code=True).to(device) 
+    model.max_seq_length = 128
+    print("Encoding sentences...")
+    embeddings = model.encode(list_of_texts, convert_to_tensor=True, device=device) 
+    print("DONE\n")
+    return embeddings.cpu().numpy()
 
 class YelpDataset(Dataset):
     '''
@@ -95,11 +91,14 @@ if __name__ == "__main__":
     train_df, test_df = download_subset_data()
 
     # Create data loaders
-    train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=False)
-    test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=False)
+    train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=True)
+    test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=True)
 
     # Verify DataLoader output
     for batch in train_loader:
         print(batch['text'] if 'text' in batch else batch['embedding'])
         print(batch['label'])
         break
+    # sentences = [ "The weather is lovely today.", "It's so sunny outside!", "He drove to the stadium." ] 
+    # embeddings = get_embeddings(sentences, device=DEVICE)
+    # print(embeddings)
