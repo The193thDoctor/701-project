@@ -4,10 +4,12 @@ import pandas as pd
 import torch 
 from torch.utils.data import Dataset, DataLoader 
 from sentence_transformers import SentenceTransformer # Device configuration 
+from sklearn.decomposition import PCA
 
 DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
 print(f"Using device: {DEVICE}")
 MODEL_NAME = "jinaai/jina-embeddings-v2-base-en"
+pca_dim = 16
 
 def download_subset_data(train_size=2000, test_size=500, seed=10701):
     '''
@@ -86,6 +88,11 @@ def create_data_loader(df, batch_size=16, use_embeddings=False, device=DEVICE):
 
     return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
+def pca(data_loader):
+    pca_model = PCA(n_components = pca_dim)
+    out_data = pca_model.fit_transform(data_loader)
+    return out_data
+
 if __name__ == "__main__":
     # Example usage of the data loader
     train_df, test_df = download_subset_data()
@@ -93,6 +100,9 @@ if __name__ == "__main__":
     # Create data loaders
     train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=True)
     test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=True)
+
+    train_loader = pca(train_loader)
+    test_loader = pca(test_loader)
 
     # Verify DataLoader output
     for batch in train_loader:
