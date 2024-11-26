@@ -55,17 +55,21 @@ class YelpDataset(Dataset):
     '''
     Custom Dataset class for Yelp Polarity data.
     '''
-    def __init__(self, texts, labels, embeddings=None):
+    def __init__(self, texts, labels,  pca_dim=128, embeddings=None):
         self.texts = texts
         self.labels = labels
-        self.embeddings = embeddings  # Optionally pre-computed embeddings
+        self.embeddings = embeddings # Optionally pre-computed embeddings 
+        if embeddings is not None and pca_dim is not None: 
+            self.pca = PCA(n_components=pca_dim) 
+            self.embeddings = self.pca.fit_transform(self.embeddings)
 
     def __len__(self):
         return len(self.labels)
 
+
     def __getitem__(self, idx):
         if self.embeddings is not None:
-            return {'embedding': self.embeddings[idx], 'label': self.labels[idx]}
+            return {'embedding': (self.embeddings[idx]), 'label': self.labels[idx]}
         else:
             return {'text': self.texts[idx], 'label': self.labels[idx]}
 
@@ -101,8 +105,8 @@ if __name__ == "__main__":
     train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=True)
     test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=True)
 
-    train_loader = pca(train_loader)
-    test_loader = pca(test_loader)
+    # train_loader = pca(train_loader)
+    # test_loader = pca(test_loader)
 
     # Verify DataLoader output
     for batch in train_loader:
