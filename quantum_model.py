@@ -8,8 +8,9 @@ import pennylane as qml
 
 # Device configuration
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
-q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
-print("currDevice: ", q_device)
+# q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
+q_device = 'lightning.qubit'
+# print("currDevice: ", q_device)
 
 class HybridQuantumClassifier(nn.Module):
     def __init__(self, n_qubits, n_layers, n_classes, encoding='rotation'):
@@ -48,7 +49,7 @@ class HybridQuantumClassifier(nn.Module):
     def forward(self, x):
         # x has shape (batch_size, n_qubits)
         # Compute quantum circuit outputs for each sample in the batch
-        print("xdevice: ", x.device)
+        # print("xdevice: ", x.device)
         quantum_outputs = torch.stack([torch.tensor(self.quantum_layer(sample), device = x.device) for sample in x]).float()
         logits = self.fc(quantum_outputs)
         return logits
@@ -59,7 +60,11 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
     losses = []
     correct_predictions = 0
 
+    totalGradientNorm = 0
+    number = 0
+
     for batch in data_loader:
+        number += 1
         embeddings = batch['embedding'].to(device).float()
         labels = batch['label'].to(device)
 
@@ -75,12 +80,16 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
 
         entry = [(param.grad.data.norm())**2 for param in model.parameters() if param.grad is not None]
         gradientNorm = sum(entry)
-        print("gradientNorm:", gradientNorm)
+        # print("gradientNorm:", gradientNorm)
+        totalGradientNorm += gradientNorm
 
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+    averageGradNorm = totalGradientNorm/number
+    print("averageGradNorm: ", averageGradNorm)
+
 
     return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses)
 
@@ -111,10 +120,10 @@ def eval_model(model, data_loader, loss_fn, device):
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
-    num_epochs = 15  # Increased epochs for better training
+    num_epochs = 8 #15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 8
-    n_layers = 3  # Increased number of layers for deeper circuit
+    n_layers = 8 #3 # Increased number of layers for deeper circuit
 
     # Load data
     train_df, test_df = download_subset_data()
