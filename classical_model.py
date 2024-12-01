@@ -79,7 +79,7 @@ if __name__ == "__main__":
     num_epochs = 15
     n_classes = 2
     hidden_dim = 64
-    input_dim = 15
+    input_dim = 8
 
     # Load data
     train_df, test_df = download_subset_data()
