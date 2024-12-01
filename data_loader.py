@@ -11,7 +11,6 @@ import pickle
 DEVICE = 'cpu' 
 print(f"Using device: {DEVICE}")
 MODEL_NAME = "jinaai/jina-embeddings-v2-base-en"
-pca_dim = 16
 
 SAVE_DIR = "./saved_data"
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -65,7 +64,7 @@ class YelpDataset(Dataset):
         self.labels = labels
         self.embeddings = embeddings # Optionally pre-computed embeddings 
         if embeddings is not None and pca_dim is not None: 
-            self.pca = PCA(n_components=pca_dim) 
+            self.pca = PCA()
             self.embeddings = self.pca.fit_transform(self.embeddings)
 
     def __len__(self):

@@ -3,11 +3,11 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from data_loader import download_subset_data, load_data_loader
+from data_loader import download_subset_data, create_data_loader
 import pennylane as qml
 
 # Device configuration
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
 
 class HybridQuantumClassifier(nn.Module):
@@ -20,10 +20,20 @@ class HybridQuantumClassifier(nn.Module):
 
         # Quantum circuit parameters
         # Each layer has 3 rotation angles per qubit (RX, RY, RZ) and additional parameters for entangling layers
-        self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits, 3))
+        self.q_params = []
+        for i in range(n_layers):
+            self.q_params.append(nn.Parameter(0.01 * torch.randn(1, n_qubits, 3)))
 
         # Final classical layer
         self.fc = nn.Linear(n_qubits, n_classes)
+
+    def add_layer(self):
+        self.n_layers += 1
+        self.q_params.append(nn.Parameter(0.01 * torch.randn(1, self.n_qubits, 3)))
+
+    def freeze_layers(self, n_layers):
+        for i in range(n_layers - 1):
+            self.q_params[i].requires_grad = False
 
     def quantum_layer(self, x):
         # Use the GPU-accelerated Lightning backend
@@ -36,7 +46,8 @@ class HybridQuantumClassifier(nn.Module):
                     qml.RY(inputs[idx], wires=idx)
             elif self.encoding == 'amplitude':
                 qml.templates.AmplitudeEmbedding(inputs, wires=range(self.n_qubits), normalize=True)
-            qml.templates.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
+            for i in range(self.n_layers):
+                qml.templates.StronglyEntanglingLayers(weights[i], wires=range(self.n_qubits))
 
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
 
@@ -111,8 +122,10 @@ if __name__ == "__main__":
 
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = load_data_loader("train", batch_size=batch_size)
-    test_loader = load_data_loader("test", batch_size=batch_size)
+    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True,
+                                      device="cpu")  # use CPU to save memory
+    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True,
+                                     device="cpu")  # use CPU to save memory
 
     # Initialize model
     model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes)
