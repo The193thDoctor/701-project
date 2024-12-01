@@ -5,11 +5,16 @@ import torch
 from torch.utils.data import Dataset, DataLoader 
 from sentence_transformers import SentenceTransformer # Device configuration 
 from sklearn.decomposition import PCA
+import os
+import pickle
 
 DEVICE = 'cpu' 
 print(f"Using device: {DEVICE}")
 MODEL_NAME = "jinaai/jina-embeddings-v2-base-en"
 pca_dim = 16
+
+SAVE_DIR = "./saved_data"
+os.makedirs(SAVE_DIR, exist_ok=True)
 
 def download_subset_data(train_size=2000, test_size=500, seed=10701):
     '''
@@ -73,7 +78,7 @@ class YelpDataset(Dataset):
         else:
             return {'text': self.texts[idx], 'label': self.labels[idx]}
 
-def create_data_loader(df, batch_size=16, use_embeddings=False, device=DEVICE):
+def create_data_loader(df, batch_size=16, use_embeddings=False, device=DEVICE, save_prefix=None):
     '''
     Creates a DataLoader for the given DataFrame.
     Args:
@@ -86,6 +91,12 @@ def create_data_loader(df, batch_size=16, use_embeddings=False, device=DEVICE):
     '''
     if use_embeddings:
         embeddings = get_embeddings(df['text'].tolist(), device)
+        if save_prefix:
+            # Save embeddings and labels
+            with open(f"{SAVE_DIR}/{save_prefix}_embeddings.pkl", "wb") as f:
+                pickle.dump(embeddings, f)
+            with open(f"{SAVE_DIR}/{save_prefix}_labels.pkl", "wb") as f:
+                pickle.dump(df['label'].tolist(), f)
         dataset = YelpDataset(texts=None, labels=df['label'].tolist(), embeddings=embeddings)
     else:
         dataset = YelpDataset(texts=df['text'].tolist(), labels=df['label'].tolist())
@@ -97,16 +108,28 @@ def pca(data_loader):
     out_data = pca_model.fit_transform(data_loader)
     return out_data
 
+
+def load_data_loader(save_prefix, batch_size=16):
+    # Load embeddings and labels
+    with open(f"{SAVE_DIR}/{save_prefix}_embeddings.pkl", "rb") as f:
+        embeddings = pickle.load(f)
+    with open(f"{SAVE_DIR}/{save_prefix}_labels.pkl", "rb") as f:
+        labels = pickle.load(f)
+    dataset = YelpDataset(texts=None, labels=labels, embeddings=embeddings)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+
 if __name__ == "__main__":
     # Example usage of the data loader
     train_df, test_df = download_subset_data()
 
     # Create data loaders
-    train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=True)
-    test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=True)
+    train_loader = create_data_loader(train_df, batch_size=8, use_embeddings=True, save_prefix="train")
+    test_loader = create_data_loader(test_df, batch_size=8, use_embeddings=True, save_prefix="test")
 
-    # train_loader = pca(train_loader)
-    # test_loader = pca(test_loader)
+    # Later: Load saved data loaders
+    # train_loader = load_data_loader("train", batch_size=8)
+    # test_loader = load_data_loader("test", batch_size=8)
 
     # Verify DataLoader output
     for batch in train_loader:

@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from data_loader import download_subset_data, create_data_loader
+from data_loader import download_subset_data, load_data_loader
 import pennylane as qml
 
 # Device configuration
@@ -111,10 +111,8 @@ if __name__ == "__main__":
 
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True,
-                                      device="cpu")  # use CPU to save memory
-    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True,
-                                     device="cpu")  # use CPU to save memory
+    train_loader = load_data_loader("train", batch_size=batch_size)
+    test_loader = load_data_loader("test", batch_size=batch_size)
 
     # Initialize model
     model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes)

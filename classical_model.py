@@ -4,7 +4,8 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from data_loader import download_subset_data, create_data_loader, DEVICE
+from data_loader import download_subset_data, load_data_loader, DEVICE
+
 
 
 # Device configuration
@@ -78,13 +79,12 @@ if __name__ == "__main__":
     num_epochs = 15
     n_classes = 2
     hidden_dim = 64
-
     input_dim = 15
 
     # Load data
     train_df, test_df = download_subset_data()
-    train_loader = create_data_loader(train_df, batch_size=batch_size, use_embeddings=True)
-    test_loader = create_data_loader(test_df, batch_size=batch_size, use_embeddings=True)
+    train_loader = load_data_loader("train", batch_size=batch_size)
+    test_loader = load_data_loader("test", batch_size=batch_size)
 
     # Initialize model
     model = SentimentClassifier(n_classes = n_classes, input_dim = input_dim, hidden_dim = hidden_dim)
