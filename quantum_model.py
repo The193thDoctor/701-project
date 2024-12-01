@@ -12,11 +12,12 @@ q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
 
 
 class HybridQuantumClassifier(nn.Module):
-    def __init__(self, n_qubits, n_layers, n_classes):
+    def __init__(self, n_qubits, n_layers, n_classes, encoding='rotation'):
         super(HybridQuantumClassifier, self).__init__()
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.n_classes = n_classes
+        self.encoding = encoding
 
         # Quantum circuit parameters
         # Each layer has 3 rotation angles per qubit (RX, RY, RZ) and additional parameters for entangling layers
@@ -31,8 +32,11 @@ class HybridQuantumClassifier(nn.Module):
 
         @qml.qnode(dev, interface='torch')
         def circuit(inputs, weights):
-            for idx in range(self.n_qubits):
-                qml.RY(inputs[idx], wires=idx)
+            if self.encoding == 'rotation':
+                for idx in range(self.n_qubits):
+                    qml.RY(inputs[idx], wires=idx)
+            elif self.encoding == 'amplitude':
+                qml.templates.AmplitudeEmbedding(inputs, wires=range(self.n_qubits), normalize=True)
             qml.templates.StronglyEntanglingLayers(weights, wires=range(self.n_qubits))
 
             return [qml.expval(qml.PauliZ(i)) for i in range(self.n_qubits)]
