@@ -103,7 +103,7 @@ def create_data_loader(df, batch_size=16, use_embeddings=False, device=DEVICE, s
     return DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 def pca(data_loader):
-    pca_model = PCA(n_components = pca_dim)
+    pca_model = PCA()
     out_data = pca_model.fit_transform(data_loader)
     return out_data
 
