@@ -9,6 +9,7 @@ import pennylane as qml
 # Device configuration
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
 q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
+print("currDevice: ", q_device)
 
 class HybridQuantumClassifier(nn.Module):
     def __init__(self, n_qubits, n_layers, n_classes, encoding='rotation'):
@@ -47,7 +48,8 @@ class HybridQuantumClassifier(nn.Module):
     def forward(self, x):
         # x has shape (batch_size, n_qubits)
         # Compute quantum circuit outputs for each sample in the batch
-        quantum_outputs = torch.stack([torch.tensor(self.quantum_layer(sample)) for sample in x]).float()
+        print("xdevice: ", x.device)
+        quantum_outputs = torch.stack([torch.tensor(self.quantum_layer(sample), device = x.device) for sample in x]).float()
         logits = self.fc(quantum_outputs)
         return logits
 
@@ -70,6 +72,11 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         _, preds = torch.max(outputs, dim=1)
         correct_predictions += torch.sum(preds == labels)
         losses.append(loss.item())
+
+        entry = [(param.grad.data.norm())^2 for param in model.parameters() if param.grad is not None]
+        gradientNorm = sum(entry)
+        print("gradientNorm:", gradientNorm)
+
 
         optimizer.zero_grad()
         loss.backward()
