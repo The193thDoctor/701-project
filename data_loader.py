@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from sentence_transformers import SentenceTransformer # Device configuration 
 from sklearn.decomposition import PCA
 
-DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
+DEVICE = 'cpu' 
 print(f"Using device: {DEVICE}")
 MODEL_NAME = "jinaai/jina-embeddings-v2-base-en"
 pca_dim = 16

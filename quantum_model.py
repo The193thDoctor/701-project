@@ -3,13 +3,12 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from data_loader import download_subset_data, create_data_loader, DEVICE
+from data_loader import download_subset_data, create_data_loader
 import pennylane as qml
 
 # Device configuration
-device = DEVICE
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
 q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
-
 
 class HybridQuantumClassifier(nn.Module):
     def __init__(self, n_qubits, n_layers, n_classes):
