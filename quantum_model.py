@@ -73,7 +73,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         correct_predictions += torch.sum(preds == labels)
         losses.append(loss.item())
 
-        entry = [(param.grad.data.norm())^2 for param in model.parameters() if param.grad is not None]
+        entry = [(param.grad.data.norm())**2 for param in model.parameters() if param.grad is not None]
         gradientNorm = sum(entry)
         print("gradientNorm:", gradientNorm)
 
