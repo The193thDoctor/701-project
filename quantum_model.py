@@ -107,7 +107,7 @@ if __name__ == "__main__":
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 8
-    n_layers = 3  # Increased number of layers for deeper circuit
+    n_layers = 7  # Increased number of layers for deeper circuit
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
 
     # Training loop
     for epoch in range(num_epochs):
