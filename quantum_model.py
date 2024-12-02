@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-2)
     # different lr for different parts
     # optimizer = torch.optim.Adam( [
     #     {'params': model.q_params, 'lr': 1e-2},
