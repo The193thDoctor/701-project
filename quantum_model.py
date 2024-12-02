@@ -118,7 +118,7 @@ def eval_model(model, data_loader, loss_fn, device):
 
 if __name__ == "__main__":
     # Parameters
-    batch_size = 32
+    batch_size = 8
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 5
@@ -135,12 +135,12 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    #optimizer = torch.optim.Adam(model.parameters(), lr=4e-2)
-    #different lr for different parts
-    optimizer = torch.optim.Adam( [
-        {'params': model.q_params, 'lr': 1e-2},
-        {'params': model.fc.parameters(), 'lr': 2e-3}
-    ], lr=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
+    # different lr for different parts
+    # optimizer = torch.optim.Adam( [
+    #     {'params': model.q_params, 'lr': 1e-2},
+    #     {'params': model.fc.parameters(), 'lr': 2e-3}
+    # ], lr=1e-2)
 
     # Training loop
     for epoch in range(num_epochs):
