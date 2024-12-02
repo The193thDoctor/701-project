@@ -7,23 +7,31 @@ from data_loader import download_subset_data, load_data_loader
 import pennylane as qml
 
 # Device configuration
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu' 
-q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
+# device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
+#q_device = 'lightning.gpu' if torch.cuda.is_available() else 'lightning.qubit'
+q_device = 'default.qubit'
 print("currDevice: ", q_device)
 
 class HybridQuantumClassifier(nn.Module):
     def __init__(self, n_qubits, n_layers, n_classes, encoding='rotation'):
         super(HybridQuantumClassifier, self).__init__()
         self.n_qubits = n_qubits
+        self.dim = 0
+        self.encoding = encoding
+        if self.encoding == 'rotation':
+            self.dim = self.n_qubits
+        elif self.encoding == 'amplitude':
+            self.dim = 2 ** self.n_qubits
         self.n_layers = n_layers
         self.n_classes = n_classes
-        self.encoding = encoding
 
         # Quantum circuit parameters
         # Each layer has 3 rotation angles per qubit (RX, RY, RZ) and additional parameters for entangling layers
         self.q_params = nn.Parameter(0.01 * torch.randn(n_layers, n_qubits, 3))
 
         # Final classical layer
+        # self.ic = nn.Linear(self.dim, self.dim)
         self.fc = nn.Linear(n_qubits, n_classes)
 
     def quantum_layer(self, x):
@@ -48,8 +56,8 @@ class HybridQuantumClassifier(nn.Module):
     def forward(self, x):
         # x has shape (batch_size, n_qubits)
         # Compute quantum circuit outputs for each sample in the batch
-        print("xdevice: ", x.device)
-        quantum_outputs = torch.stack([torch.tensor(self.quantum_layer(sample), device = x.device) for sample in x]).float()
+        # x = self.ic(x[:, :self.dim])
+        quantum_outputs = torch.stack([torch.stack(self.quantum_layer(sample)) for sample in x]).float()
         logits = self.fc(quantum_outputs)
         return logits
 
@@ -64,7 +72,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         labels = batch['label'].to(device)
 
         # Reduce embeddings to match n_qubits
-        embeddings = embeddings[:, :model.n_qubits]
+        embeddings = embeddings[:, :model.dim]
 
         outputs = model(embeddings)
         loss = loss_fn(outputs, labels)
@@ -73,13 +81,12 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         correct_predictions += torch.sum(preds == labels)
         losses.append(loss.item())
 
-        entry = [(param.grad.data.norm())**2 for param in model.parameters() if param.grad is not None]
-        gradientNorm = sum(entry)
-        print("gradientNorm:", gradientNorm)
-
-
         optimizer.zero_grad()
         loss.backward()
+
+        entry = [(param.grad.data.norm())**2 for param in [model.q_params] if param.grad is not None]
+        gradientNorm = sum(entry)
+        print("gradientNorm:", gradientNorm)
         optimizer.step()
 
     return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses)
@@ -96,7 +103,7 @@ def eval_model(model, data_loader, loss_fn, device):
             labels = batch['label'].to(device)
 
             # Reduce embeddings to match n_qubits
-            embeddings = embeddings[:, :model.n_qubits]
+            embeddings = embeddings[:, :model.dim]
 
             outputs = model(embeddings)
             loss = loss_fn(outputs, labels)
@@ -110,10 +117,10 @@ def eval_model(model, data_loader, loss_fn, device):
 
 if __name__ == "__main__":
     # Parameters
-    batch_size = 8
+    batch_size = 32
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
-    n_qubits = 8
+    n_qubits = 6
     n_layers = 3  # Increased number of layers for deeper circuit
 
     # Load data
@@ -122,12 +129,17 @@ if __name__ == "__main__":
     test_loader = load_data_loader("test", batch_size=batch_size)
 
     # Initialize model
-    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes)
+    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes, encoding='rotation')
     model = model.to(device)
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=4e-2)
+    #different lr for different parts
+    optimizer = torch.optim.Adam( [
+        {'params': model.q_params, 'lr': 1e-2},
+        {'params': model.fc.parameters(), 'lr': 2e-3}
+    ], lr=1e-2)
 
     # Training loop
     for epoch in range(num_epochs):

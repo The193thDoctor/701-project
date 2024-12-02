@@ -114,7 +114,7 @@ def eval_model(model, data_loader, loss_fn, device):
 
 if __name__ == "__main__":
     # Parameters
-    batch_size = 8
+    batch_size = 64
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 8
