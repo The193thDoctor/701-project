@@ -114,7 +114,7 @@ if __name__ == "__main__":
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 8
-    n_layers = 7  # Increased number of layers for deeper circuit
+    n_layers = 5  # Increased number of layers for deeper circuit
 
     # Load data
     train_df, test_df = download_subset_data()
