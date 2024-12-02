@@ -84,9 +84,10 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         optimizer.zero_grad()
         loss.backward()
 
-        entry = [(param.grad.data.norm())**2 for param in [model.q_params] if param.grad is not None]
-        gradientNorm = sum(entry)
-        print("gradientNorm:", gradientNorm)
+        # Add this to verify barren platau
+        # entry = [(param.grad.data.norm())**2 for param in [model.q_params] if param.grad is not None]
+        # gradientNorm = sum(entry)
+        # print("gradientNorm:", gradientNorm)
         optimizer.step()
 
     return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses)
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     batch_size = 32
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
-    n_qubits = 6
+    n_qubits = 5
     n_layers = 3  # Increased number of layers for deeper circuit
 
     # Load data
