@@ -77,7 +77,7 @@ if __name__ == "__main__":
     num_epochs = 15
     n_classes = 2
     hidden_dim = 64
-    input_dim = 8
+    input_dim = 5
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=2e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     train_acc_all = []
     train_loss_all = []
