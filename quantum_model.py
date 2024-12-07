@@ -119,6 +119,7 @@ def eval_model(model, data_loader, loss_fn, device):
 
 if __name__ == "__main__":
     # Parameters
+    encoding='rotation'
     batch_size = 8
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     test_loader = load_data_loader("test", batch_size=batch_size)
 
     # Initialize model
-    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes, encoding='rotation')
+    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes, encoding=encoding)
     model = model.to(device)
 
     # Loss and optimizer
@@ -165,5 +166,5 @@ if __name__ == "__main__":
 
     # Save model
     torch.save(model.state_dict(), 'quantum_model.bin')
-    with open("output/quantum.js", "w") as file:
+    with open(f"output/quantum_enc={encoding}.js", "w") as file:
         json.dump(output, file, indent=4)
