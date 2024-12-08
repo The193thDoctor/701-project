@@ -21,3 +21,4 @@ dependencies:
     - typing-extensions
     - datasets
     - sentence_transformers
+    # If using 'lightning.gpu', need to install https://pennylane.ai/install#high-performance-computing-and-gpus
