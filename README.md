@@ -1,6 +1,6 @@
 # Hybrid Quantum-Classical Sentiment Classifier
 
-A Quantum Machine Learning (QML) project that builds a hybrid quantum-classical model to perform sentiment analysis on the YELP Polarity dataset. The model leverages both classical neural network layers and quantum circuits to classify sentiments based on input data features.
+A Quantum Machine Learning (QML) project that builds a hybrid quantum-classical model to perform sentiment analysis on the YELP Polarity dataset. The model compares the performance of quantum vs classical model 
 
 ## Table of Contents
 
