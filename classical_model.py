@@ -78,7 +78,10 @@ if __name__ == "__main__":
     n_classes = 2
     hidden_dim = 64
     input_dim = 32
-    lr=3e-3
+    lr=1e-3 
+    
+    # use 3e-3 for 5
+    # use 1e-3 for 32
 
     # Load data
     train_df, test_df = download_subset_data()

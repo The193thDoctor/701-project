@@ -129,7 +129,8 @@ if __name__ == "__main__":
     n_classes = 2
     n_qubits = 5
     n_layers = 3 
-    lr=3e-2
+    lr = 2e-2
+    # rotation use 2e-2
 
     # Load data
     train_df, test_df = download_subset_data()
