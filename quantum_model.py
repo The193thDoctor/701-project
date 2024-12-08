@@ -66,6 +66,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
     model.train()
     losses = []
     correct_predictions = 0
+    gradientNorms = []
 
     for batch in data_loader:
         embeddings = batch['embedding'].to(device).float()
@@ -85,12 +86,15 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         loss.backward()
 
         # Add this to verify barren platau
-        # entry = [(param.grad.data.norm())**2 for param in [model.q_params] if param.grad is not None]
-        # gradientNorm = sum(entry)
+        # param.grad.data[0] is first layer
+        entry = [(param.grad.data[0].norm())**2 for param in [model.q_params] if param.grad is not None]
+        gradientNorm = sum(entry)
+        gradientNorms.append(gradientNorm)
         # print("gradientNorm:", gradientNorm)
         optimizer.step()
-
-    return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses)
+    print("gradient Norms: ", gradientNorms)
+    # print(torch.tensor(gradientNorms).shape)
+    return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses), gradientNorms
 
 
 def eval_model(model, data_loader, loss_fn, device):
@@ -122,7 +126,7 @@ if __name__ == "__main__":
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
     n_qubits = 5
-    n_layers = 3  # Increased number of layers for deeper circuit
+    n_layers = 10 #3  # Increased number of layers for deeper circuit
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -143,9 +147,11 @@ if __name__ == "__main__":
     # ], lr=1e-2)
 
     # Training loop
+    gradientNormsEpoch = []
     for epoch in range(num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}")
-        train_acc, train_loss = train_epoch(model, train_loader, loss_fn, optimizer, device)
+        train_acc, train_loss, gradientNorms = train_epoch(model, train_loader, loss_fn, optimizer, device)
+        gradientNormsEpoch.append(gradientNorms)
         print(f"Train loss: {train_loss:.4f}, accuracy: {train_acc:.4f}")
 
         val_acc, val_loss = eval_model(model, test_loader, loss_fn, device)
