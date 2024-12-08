@@ -15,8 +15,13 @@ A Quantum Machine Learning (QML) project that builds a hybrid quantum-classical 
 
 This project implements a hybrid quantum-classical classifier designed to perform sentiment analysis on the YELP Polarity dataset. By integrating quantum circuits with classical neural network layers, the model aims to explore the potential advantages of quantum computing in natural language processing tasks.
 
-### Prerequisites
+## Useful Files
+data_loader.py         Pre-processing data and reduce dimension
+classical_model.py     A standard neural network
+quantum_model.py       Variational Quantum Circuits (VQC)
+compare_plot.py        Plot the train/test accuracy and loss
 
+### Prerequisites
 - Other Python packages as listed in 'environment.yml'
 
 ### Setup
