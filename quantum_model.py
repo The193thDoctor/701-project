@@ -127,13 +127,8 @@ if __name__ == "__main__":
     batch_size = 8
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
-<<<<<<< HEAD
-    n_qubits = 2
-    n_layers = 3  # Increased number of layers for deeper circuit
-=======
     n_qubits = 5
-    n_layers = 10 #3  # Increased number of layers for deeper circuit
->>>>>>> e78680a3dcf8f54db8b4368582e3c3c184fdcc1a
+    n_layers = 3 
 
     # Load data
     train_df, test_df = download_subset_data()
