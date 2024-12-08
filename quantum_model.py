@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from data_loader import download_subset_data, load_data_loader
 import pennylane as qml
+import json
 
 # Device configuration
 # device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -122,6 +123,7 @@ def eval_model(model, data_loader, loss_fn, device):
 
 if __name__ == "__main__":
     # Parameters
+    encoding='rotation'
     batch_size = 8
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
@@ -134,12 +136,12 @@ if __name__ == "__main__":
     test_loader = load_data_loader("test", batch_size=batch_size)
 
     # Initialize model
-    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes, encoding='rotation')
+    model = HybridQuantumClassifier(n_qubits=n_qubits, n_layers=n_layers, n_classes=n_classes, encoding=encoding)
     model = model.to(device)
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-2)
     # different lr for different parts
     # optimizer = torch.optim.Adam( [
     #     {'params': model.q_params, 'lr': 1e-2},
@@ -147,7 +149,16 @@ if __name__ == "__main__":
     # ], lr=1e-2)
 
     # Training loop
+<<<<<<< HEAD
     gradientNormsEpoch = []
+=======
+    output = {
+        "train_acc" : [],
+        "train_loss" : [],
+        "val_acc": [],
+        "val_loss": []
+    }
+>>>>>>> 1ae0019b514e9c109d995540e37187f340f26bd5
     for epoch in range(num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}")
         train_acc, train_loss, gradientNorms = train_epoch(model, train_loader, loss_fn, optimizer, device)
@@ -157,5 +168,12 @@ if __name__ == "__main__":
         val_acc, val_loss = eval_model(model, test_loader, loss_fn, device)
         print(f"Validation loss: {val_loss:.4f}, accuracy: {val_acc:.4f}")
 
+        output["train_acc"].append(train_acc)
+        output["train_loss"].append(train_loss)
+        output["val_acc"].append(val_acc)
+        output["val_loss"].append(val_loss)
+
     # Save model
     torch.save(model.state_dict(), 'quantum_model.bin')
+    with open(f"output/quantum_enc={encoding}.js", "w") as file:
+        json.dump(output, file, indent=4)

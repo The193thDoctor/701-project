@@ -71,8 +71,6 @@ def eval_model(model, data_loader, loss_fn, device):
     return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses)
 
 
-
-
 if __name__ == "__main__":
     # Parameters
     batch_size = 8
