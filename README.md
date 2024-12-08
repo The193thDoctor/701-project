@@ -11,10 +11,6 @@ A Quantum Machine Learning (QML) project that builds a hybrid quantum-classical 
 - [Project Structure](#project-structure)
 - [Hyperparameters](#hyperparameters)
 - [Layer-wise Training](#layer-wise-training)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
 
 ## Project Overview
 
