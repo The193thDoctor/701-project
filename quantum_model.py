@@ -93,7 +93,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device):
         gradientNorms.append(gradientNorm)
         # print("gradientNorm:", gradientNorm)
         optimizer.step()
-    print("gradient Norms: ", gradientNorms)
+    # print("gradient Norms: ", gradientNorms)
     # print(torch.tensor(gradientNorms).shape)
     return correct_predictions.double() / len(data_loader.dataset), sum(losses) / len(losses), gradientNorms
 
@@ -129,6 +129,7 @@ if __name__ == "__main__":
     n_classes = 2
     n_qubits = 5
     n_layers = 3 
+    lr=3e-2
 
     # Load data
     train_df, test_df = download_subset_data()
@@ -141,7 +142,7 @@ if __name__ == "__main__":
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     # different lr for different parts
     # optimizer = torch.optim.Adam( [
     #     {'params': model.q_params, 'lr': 1e-2},
@@ -172,5 +173,5 @@ if __name__ == "__main__":
 
     # Save model
     torch.save(model.state_dict(), 'quantum_model.bin')
-    with open(f"output/quantum__enc={encoding}.js", "w") as file:
+    with open(f"output/quantum_enc={encoding}_lr={lr}.js", "w") as file:
         json.dump(output, file, indent=4)
