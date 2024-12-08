@@ -117,5 +117,7 @@ if __name__ == "__main__":
     # Save model
     torch.save(model.state_dict(), 'classical_model.bin')
 
+    
+
 
 

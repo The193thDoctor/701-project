@@ -123,7 +123,7 @@ if __name__ == "__main__":
     batch_size = 8
     num_epochs = 15  # Increased epochs for better training
     n_classes = 2
-    n_qubits = 5
+    n_qubits = 2
     n_layers = 3  # Increased number of layers for deeper circuit
 
     # Load data
@@ -159,12 +159,12 @@ if __name__ == "__main__":
         val_acc, val_loss = eval_model(model, test_loader, loss_fn, device)
         print(f"Validation loss: {val_loss:.4f}, accuracy: {val_acc:.4f}")
 
-        output["train_acc"].append(train_acc)
+        output["train_acc"].append(train_acc.item())
         output["train_loss"].append(train_loss)
-        output["val_acc"].append(val_acc)
+        output["val_acc"].append(val_acc.item())
         output["val_loss"].append(val_loss)
 
     # Save model
     torch.save(model.state_dict(), 'quantum_model.bin')
-    with open(f"output/quantum_enc={encoding}.js", "w") as file:
+    with open(f"output/quantum__enc={encoding}.js", "w") as file:
         json.dump(output, file, indent=4)
