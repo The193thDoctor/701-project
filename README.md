@@ -6,8 +6,7 @@ A Quantum Machine Learning (QML) project that builds a hybrid quantum-classical 
 
 - [Project Overview](#project-overview)
 - [Usage](#usage)
-  - [Training the Model](#training-the-model)
-  - [Switching Encoding Methods](#switching-encoding-methods)
+- [Prerequisites](#prerequisites)
 - [Project Structure](#project-structure)
 - [Hyperparameters](#hyperparameters)
 - [Layer-wise Training](#layer-wise-training)
